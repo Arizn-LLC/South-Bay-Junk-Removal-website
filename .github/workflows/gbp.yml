@@ -1,0 +1,36 @@
+name: Refresh Google Business Profile
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: gbp-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync approved location
+        run: python3 scripts/sync_gbp.py
+        env:
+          GBP_LOCATION: ${{ vars.GBP_LOCATION }}
+          GBP_CLIENT_ID: ${{ secrets.GBP_CLIENT_ID }}
+          GBP_CLIENT_SECRET: ${{ secrets.GBP_CLIENT_SECRET }}
+          GBP_REFRESH_TOKEN: ${{ secrets.GBP_REFRESH_TOKEN }}
+      - name: Publish changed feed
+        run: |
+          if [ -n "$(git status --porcelain -- gbp-feed.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add gbp-feed.json
+            git commit -m "Refresh Google Business Profile feed"
+            git push
+            gh api -X POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
