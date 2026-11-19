@@ -145,7 +145,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 
 <link rel="canonical" href="https://southbayjunkremoval.net/">
-<style>.pjr-field select{width:100%;padding:13px;border:1px solid #ccc;border-radius:8px;background:white;font:inherit}</style></head>
+<style>.pjr-field select{width:100%;padding:13px;border:1px solid #ccc;border-radius:8px;background:white;font:inherit}.pjr-field .pjr-checks{display:flex;flex-direction:column;gap:8px;}.pjr-field .pjr-checks label{font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;display:flex;gap:8px;align-items:center;}.pjr-field .pjr-checks input{width:auto;padding:0;}</style></head>
 <body class="pjr-page"><noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5K66ZHMP" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- paige-section:header:start -->
@@ -1149,6 +1149,25 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </div><div class="pjr-field"><label for="load-size">Load size</label><select id="load-size" name="loadSize"><option value="">Select a load size (optional)</option><option value="Just a few items ($89–$180)">Just a few items ($89–$180)</option><option value="About half a room ($120–$300)">About half a room ($120–$300)</option><option value="Full room or garage ($320–$600)">Full room or garage ($320–$600)</option><option value="Multiple rooms+ ($620–$960)">Multiple rooms+ ($620–$960)</option></select></div><div class="pjr-field"><label for="pjrContactMessage">What needs to be removed?</label>
         <textarea id="pjrContactMessage" name="message" placeholder="Items, location, stairs or access details"></textarea>
       </div>
+      <div class="pjr-field">
+        <label>Difficulty</label>
+        <div class="pjr-checks">
+          <label><input type="checkbox" name="difficulty" value="Stairs involved" /> Stairs involved</label>
+          <label><input type="checkbox" name="difficulty" value="Disassembly needed" /> Disassembly needed</label>
+        </div>
+      </div>
+      <div class="pjr-field">
+        <label for="floor">Floor</label>
+        <select id="floor" name="floor"><option value="">Select a floor (optional)</option><option value="Ground floor">Ground floor</option><option value="2nd">2nd</option><option value="3rd">3rd</option><option value="4th or higher">4th or higher</option></select>
+      </div>
+      <div class="pjr-field">
+        <label for="notes">Notes</label>
+        <input id="notes" type="text" name="notes" placeholder="Anything else we should know? (optional)" />
+      </div>
+      <div class="pjr-field">
+        <label for="contact-preference">Contact preference</label>
+        <select id="contact-preference" name="contactPreference"><option value="">Select (optional)</option><option value="Either works">Either works</option><option value="Call">Call</option><option value="Text">Text</option><option value="Email">Email</option></select>
+      </div>
       <button type="submit" class="pjr-btn pjr-btn-primary">Send My Request</button>
       <p class="pjr-form-status" data-form-status role="status" aria-live="polite"></p>
     </form>
@@ -1169,7 +1188,33 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       phone: (form.elements.phone && form.elements.phone.value) ? form.elements.phone.value : "",
       message: (form.elements.message && form.elements.message.value) ? form.elements.message.value : ""
     };
+    var rawMessage = payload.message;
     if (form.elements.loadSize.value) { payload.message += "\nLoad size: " + form.elements.loadSize.value; }
+    var difficulty = [];
+    if (form.elements.difficulty) {
+      var diff = form.elements.difficulty;
+      if (diff.length) {
+        for (var i = 0; i < diff.length; i++) { if (diff[i].checked) { difficulty.push(diff[i].value); } }
+      } else if (diff.checked) { difficulty.push(diff.value); }
+    }
+    var floorVal = (form.elements.floor && form.elements.floor.value) ? form.elements.floor.value : "";
+    var notesVal = (form.elements.notes && form.elements.notes.value) ? form.elements.notes.value : "";
+    var contactVal = (form.elements.contactPreference && form.elements.contactPreference.value) ? form.elements.contactPreference.value : "";
+    var summary = "Items: " + rawMessage + "\n" +
+      "Volume: " + ((form.elements.loadSize && form.elements.loadSize.value) ? form.elements.loadSize.value : "") + "\n" +
+      "Difficulty: " + difficulty.join(", ") + "\n" +
+      "Floor: " + floorVal + "\n" +
+      "Notes: " + (notesVal || "None") + "\n" +
+      "Name: " + payload.name + "\n" +
+      "Phone: " + payload.phone + "\n" +
+      "Email: " + payload.email + "\n" +
+      "Contact preference: " + contactVal;
+    payload.Quote_summary = summary;
+    if (form.elements.loadSize && form.elements.loadSize.value) { payload.Estimated_volume = form.elements.loadSize.value; }
+    if (difficulty.length) { payload.Difficulty = difficulty.join(", "); }
+    if (floorVal) { payload.Floor = floorVal; }
+    if (notesVal) { payload.Notes = notesVal; }
+    if (contactVal) { payload.Contact_preference = contactVal; }
     if (statusEl) { statusEl.textContent = "Sending..."; statusEl.className = "pjr-form-status"; }
     if (submitBtn) { submitBtn.disabled = true; }
     fetch(endpoint, {
